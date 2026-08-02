@@ -1,52 +1,210 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Romaneio</title>
-
-    <style>
-        body{
-            margin: 0;
-            height: 100vh;
-
-            display: flex;
-            justify-content: center;
-            align-items: center;
-
-            background-color: #f5f5f5;
-            font-family: Arial, Helvetica, sans-serif;
-        }
-
-        .container{
-            text-align: center;
-        }
-
-        h1{
-            color: #003366;
-            margin-bottom: 10px;
-        }
-
-        h2{
-            color: #444;
-            margin-bottom: 8px;
-        }
-
-        h3{
-            color: #777;
-            font-weight: normal;
-        }
-
-    </style>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SmartAssets - Romaneio NFC</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+body{font-family:Arial,sans-serif;background:#eef2f7;margin:0}
+header{background:#0b5ed7;color:#fff;padding:18px;text-align:center}
+.container{max-width:900px;margin:20px auto;background:#fff;padding:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+input,button{padding:10px;border-radius:6px;border:1px solid #bbb}
+button{cursor:pointer}
+.primary{background:#0b5ed7;color:#fff;border:none}
+.success{background:#198754;color:#fff;border:none}
+.danger{background:#dc3545;color:#fff;border:none}
+table{width:100%;border-collapse:collapse;margin-top:15px}
+th,td{border:1px solid #ddd;padding:8px}
+th{background:#f3f3f3}
+#status{margin:12px 0;font-weight:bold}
+</style>
 </head>
-
 <body>
+<header><h2>SmartAssets - Gerador de Romaneio (MVP)</h2></header>
 
-    <div class="container">
-        <h1>TRENA C/TRAVA 5 MT</h1>
-        <h2>Código Movimec: PRD25062</h2>
-        <h3>NCM: 9017.80.10</h3>
-    </div>
+<div class="container">
+
+<div class="grid">
+<input id="cliente" placeholder="Cliente">
+<input id="projeto" placeholder="Projeto">
+<input id="embarcacao" placeholder="Embarcação">
+<input id="responsavel" placeholder="Responsável">
+</div>
+
+<br>
+
+<button class="primary" onclick="iniciar()">Iniciar Romaneio</button>
+<button class="success" onclick="adicionarManual()">Adicionar Item (Teste)</button>
+<button class="danger" onclick="limpar()">Limpar</button>
+<button onclick="gerarPDF()">Gerar PDF</button>
+
+<div id="status">Romaneio não iniciado.</div>
+
+<h3>Total de itens: <span id="contador">0</span></h3>
+
+<table>
+<thead>
+<tr>
+<th>#</th>
+<th>Código</th>
+<th>Descrição</th>
+<th>UID</th>
+<th></th>
+</tr>
+</thead>
+<tbody id="lista"></tbody>
+</table>
+
+</div>
+
+<script>
+let romaneio=[];
+let iniciado=false;
+
+// Base provisória.
+// Depois substituiremos pela leitura NFC.
+const equipamentos={
+"53:5d:f5:74:b5:00:01":{codigo:"PRD001",descricao:"TRENA C/TRAVA 5 MT"},
+"11:22:33:44":{codigo:"PRD002",descricao:"ALICATE UNIVERSAL"},
+"AA:BB:CC:DD":{codigo:"PRD003",descricao:"CHAVE INGLESA"}
+};
+
+function iniciar(){
+ romaneio=[];
+ iniciado=true;
+ atualizar();
+ document.getElementById("status").innerHTML="Romaneio iniciado. Leia uma tag NFC.";
+}
+
+function adicionarEquipamento(uid){
+ if(!iniciado){
+   alert("Inicie o romaneio primeiro.");
+   return;
+ }
+
+ if(!equipamentos[uid]){
+    alert("UID não cadastrado.");
+    return;
+ }
+
+ if(romaneio.find(i=>i.uid===uid)){
+    alert("Equipamento já adicionado.");
+    return;
+ }
+
+ const eq=equipamentos[uid];
+
+ romaneio.push({
+   uid:uid,
+   codigo:eq.codigo,
+   descricao:eq.descricao
+ });
+
+ atualizar();
+}
+
+function adicionarManual(){
+ const opcoes=Object.keys(equipamentos);
+ const uid=prompt("Digite um UID cadastrado:",opcoes[0]);
+ if(uid) adicionarEquipamento(uid);
+}
+
+function remover(uid){
+ romaneio=romaneio.filter(x=>x.uid!==uid);
+ atualizar();
+}
+
+function limpar(){
+ romaneio=[];
+ atualizar();
+}
+
+function atualizar(){
+ document.getElementById("contador").textContent=romaneio.length;
+
+ let html="";
+
+ romaneio.forEach((i,index)=>{
+   html+=`
+   <tr>
+   <td>${index+1}</td>
+   <td>${i.codigo}</td>
+   <td>${i.descricao}</td>
+   <td>${i.uid}</td>
+   <td><button onclick="remover('${i.uid}')">Excluir</button></td>
+   </tr>
+   `;
+ });
+
+ document.getElementById("lista").innerHTML=html;
+}
+
+async function gerarPDF(){
+
+ if(romaneio.length===0){
+    alert("Nenhum item.");
+    return;
+ }
+
+ const {jsPDF}=window.jspdf;
+
+ const pdf=new jsPDF();
+
+ pdf.setFontSize(18);
+ pdf.text("ROMANEIO",105,15,{align:"center"});
+
+ pdf.setFontSize(11);
+
+ pdf.text("Cliente: "+document.getElementById("cliente").value,10,30);
+ pdf.text("Projeto: "+document.getElementById("projeto").value,10,38);
+ pdf.text("Embarcação: "+document.getElementById("embarcacao").value,10,46);
+ pdf.text("Responsável: "+document.getElementById("responsavel").value,10,54);
+
+ let y=70;
+
+ pdf.setFont(undefined,"bold");
+ pdf.text("Item",10,y);
+ pdf.text("Código",30,y);
+ pdf.text("Descrição",70,y);
+
+ pdf.setFont(undefined,"normal");
+
+ y+=8;
+
+ romaneio.forEach((i,idx)=>{
+   pdf.text(String(idx+1),10,y);
+   pdf.text(i.codigo,30,y);
+   pdf.text(i.descricao,70,y);
+   y+=8;
+
+   if(y>270){
+      pdf.addPage();
+      y=20;
+   }
+ });
+
+ y+=10;
+ pdf.setFont(undefined,"bold");
+ pdf.text("Total de itens: "+romaneio.length,10,y);
+
+ pdf.save("Romaneio.pdf");
+}
+
+// ---------- NFC ----------
+// Basta substituir seu trecho atual por:
+//
+// adicionarEquipamento(uid);
+//
+// Exemplo:
+//
+// const uid = serialNumber;
+//
+// adicionarEquipamento(uid);
+// -------------------------
+
+</script>
 
 </body>
 </html>
