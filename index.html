@@ -36,8 +36,7 @@ th{background:#f3f3f3}
 <br>
 
 <button class="primary" onclick="iniciar()">Iniciar Romaneio</button>
-<button class="success" onclick="iniciarLeituraNFC()">📶 Ativar NFC</button>
- <button class="danger" onclick="limpar()">Limpar</button>
+<button class="danger" onclick="limpar()">Limpar</button>
 <button onclick="gerarPDF()">Gerar PDF</button>
 
 <div id="status">Romaneio não iniciado.</div>
@@ -66,9 +65,10 @@ let iniciado=false;
 // Base provisória.
 // Depois substituiremos pela leitura NFC.
 const equipamentos={
-"53:5d:f5:74:b5:00:01":{codigo:"PRD001",descricao:"TRENA C/TRAVA 5 MT"},
-"11:22:33:44":{codigo:"PRD002",descricao:"ALICATE UNIVERSAL"},
-"AA:BB:CC:DD":{codigo:"PRD003",descricao:"CHAVE INGLESA"}
+"53:e9:e8:74:b5:00:01":{codigo:"MOG-TRENA-002",descricao:"TRENA C/TRAVA 5 MT"},
+"53:5d:f5:74:b5:00:01":{codigo:"G16S",descricao:"União Aço tubo G16s Parker"},
+"53:57:fc:74:b5:00:01":{codigo:"MOG-Mouse-006",descricao:"Mouse ótico USb BlueTooth"},
+"53:f1:ef:74:b5:00:01":{codigo:"MOG-PAQ-012",descricao:"Paquímetro Starret 150mm"}
 };
 
 function iniciar(){
