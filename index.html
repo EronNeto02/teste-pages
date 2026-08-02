@@ -36,8 +36,8 @@ th{background:#f3f3f3}
 <br>
 
 <button class="primary" onclick="iniciar()">Iniciar Romaneio</button>
-<button class="success" onclick="adicionarManual()">Adicionar Item (Teste)</button>
-<button class="danger" onclick="limpar()">Limpar</button>
+<button class="success" onclick="iniciarLeituraNFC()">📶 Ativar NFC</button>
+ <button class="danger" onclick="limpar()">Limpar</button>
 <button onclick="gerarPDF()">Gerar PDF</button>
 
 <div id="status">Romaneio não iniciado.</div>
@@ -72,10 +72,12 @@ const equipamentos={
 };
 
 function iniciar(){
- romaneio=[];
- iniciado=true;
- atualizar();
- document.getElementById("status").innerHTML="Romaneio iniciado. Leia uma tag NFC.";
+
+    romaneio=[];
+    iniciado=true;
+    atualizar();
+    iniciarLeituraNFC();
+
 }
 
 function adicionarEquipamento(uid){
@@ -103,12 +105,6 @@ function adicionarEquipamento(uid){
  });
 
  atualizar();
-}
-
-function adicionarManual(){
- const opcoes=Object.keys(equipamentos);
- const uid=prompt("Digite um UID cadastrado:",opcoes[0]);
- if(uid) adicionarEquipamento(uid);
 }
 
 function remover(uid){
@@ -140,7 +136,59 @@ function atualizar(){
 
  document.getElementById("lista").innerHTML=html;
 }
+//--------------------------------------------------
+// NFC
+//--------------------------------------------------
 
+let leitorNFC = null;
+
+async function iniciarLeituraNFC(){
+
+    if (!("NDEFReader" in window)) {
+        alert("Este navegador não suporta Web NFC.");
+        return;
+    }
+
+    try{
+
+        leitorNFC = new NDEFReader();
+
+        await leitorNFC.scan();
+
+        document.getElementById("status").innerHTML =
+        "🟢 NFC conectado - Aguardando etiqueta...";
+
+        leitorNFC.onreading = (event)=>{
+
+            const uid = event.serialNumber;
+
+            console.log("UID:", uid);
+
+            adicionarEquipamento(uid);
+
+            document.getElementById("status").innerHTML =
+            "🟢 Última leitura: " + uid;
+
+        };
+
+        leitorNFC.onreadingerror = ()=>{
+
+            document.getElementById("status").innerHTML =
+            "🔴 Erro ao ler etiqueta.";
+
+        };
+
+    }
+
+    catch(erro){
+
+        console.error(erro);
+
+        alert("Não foi possível iniciar o NFC.");
+
+    }
+
+}
 async function gerarPDF(){
 
  if(romaneio.length===0){
